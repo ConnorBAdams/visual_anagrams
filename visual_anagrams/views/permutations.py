@@ -1,3 +1,4 @@
+from fnmatch import translate
 from pathlib import Path
 import numpy as np
 import torch 
@@ -119,19 +120,9 @@ def make_jigsaw_perm_8(size, seed=0):
         5. Add the new (1-D) index to the permutation array
 
     '''
-    #np.random.seed(seed)
 
     # Get location of puzzle pieces
     piece_dir = Path(__file__).parent / 'assets'
-
-    # Get random permutations of groups of 4, and cat
-    #identity = np.arange(4)
-    #perm_corner = np.random.permutation(identity)
-    #perm_inner = np.random.permutation(identity)
-    #perm_edge1 = np.random.permutation(identity)
-    #perm_edge2 = np.random.permutation(identity)
-    #edge_swaps = np.random.randint(2, size=4)
-    #piece_perms = np.concatenate([perm_corner, perm_inner, perm_edge1, perm_edge2])
 
     # Get all the pieces in order of the names
     pieces = get_jigsaw_pieces_exhaustive(size, 8)
@@ -140,22 +131,29 @@ def make_jigsaw_perm_8(size, seed=0):
     perm = []
 
     transform_dir = piece_dir / "8x8" / f"8x8-transform.txt"
-    transform_matrix = load_transform_matrix(transform_dir, only_rotations=True)
+    transform_matrix = load_transform_matrix(transform_dir)
 
     # For each pixel, figure out where it should go
+
+    # Plan: 
+    # 1. Iterate through all pixels (in raster scan order)
+    # 2. The `pieces` is a composite of every image, this will tell us which piece it is in
+    # 3. The `transform_matrix` provide a lookup for where the piece should go
+    # 4. We will first rotate about the center of the canvas
+    # 5. Then we will translate to the correct location
+
+    ps = np.sqrt(size).astype(int)
+
     for y in range(size):
         for x in range(size):
-            # Figure out which piece (x,y) is in:
-            # Get the index:
-            current_index = y * size + x
-            piece_idx = pieces[current_index].argmax()
-
+            # Get the piece index
+            # This is raster scan order so we have to swap x and y
+            piece_idx = np.argmax(pieces[:, y, x], axis=0)
             # Look up the rotation index of the piece
-            rot_idx = transform_matrix[piece_idx]
-            dest_rot_idx = int(current_index) // 90
+            rot_deg = transform_matrix[piece_idx][3]
 
             # Figure out where it should go
-            angle = (dest_rot_idx - rot_idx) * 90 / 180 * np.pi
+            angle = rot_deg / 180 * np.pi
 
             # Center coordinates on origin
             cx = x - (size - 1) / 2.
@@ -171,9 +169,30 @@ def make_jigsaw_perm_8(size, seed=0):
             nx = int(np.rint(nx))
             ny = int(np.rint(ny))
 
+            # Calculate the piece equivalent of the destination to figure out how many piece it needs to be translated
+            # to be in the destination position
+            intermediate_x = nx // ps
+            intermediate_y = ny // ps
+
+            # Get the destination X and Y
+            dest_x = transform_matrix[piece_idx][0]
+            dest_y = transform_matrix[piece_idx][1]
+
+            translate_x = dest_x - intermediate_x
+            translate_y = dest_y - intermediate_y
+            translate_x = translate_x * ps
+            translate_y = translate_y * ps
+
+            # Now translate the piece to the correct location
+            nx = nx + translate_x
+            ny = ny + translate_y
+
             # append new index to permutation array
             new_idx = int(ny * size + nx)
             perm.append(new_idx)
+            # Write to file
+            # with open('tmp.txt', 'a') as f:
+            #     f.write(f"{x},{y},{nx},{ny}\n")
 
     # sanity check
     #import matplotlib.pyplot as plt

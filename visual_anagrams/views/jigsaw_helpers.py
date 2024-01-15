@@ -35,7 +35,7 @@ def get_jigsaw_pieces(size):
     return pieces
 
 # Helper function to load pieces as np arrays
-def load_pieces(original_path, transform_path):
+def load_pieces(original_path):
     '''
     Load a piece, from the given path, as a binary numpy array.
     Return a list of the "base" piece, and the specified rotation
@@ -45,15 +45,14 @@ def load_pieces(original_path, transform_path):
     piece = Image.open(original_path)
     piece = np.array(piece)[:,:,0] // 255
     # The final state
-    transform_piece = Image.open(transform_path)
-    transform_piece = np.array(transform_piece)[:,:,0] // 255
+    #transform_piece = Image.open(transform_path)
+    #transform_piece = np.array(transform_piece)[:,:,0] // 255
     # The directory of the piece
     #transform_index = rotation // 90
     #pieces = np.zeros((4,8,8))
     #pieces[0] = piece
     #pieces[transform_index] = transform_piece
-    pieces = np.stack([piece, transform_piece])
-    return pieces
+    return piece
 
 def load_data(path):
     with open(path, 'r') as f:
@@ -74,7 +73,7 @@ def load_data(path):
     return matrix
 
 # Helper function to load the transform matrix
-def load_transform_matrix(path, only_rotations=True):
+def load_transform_matrix(path, only_rotations=False):
     '''
     The transform matrix contains the destination and rotation for every single piece, for example:
     [x=1,y=7,n=1,r=180], [x=2,y=1,n=9,r=0], ... 
@@ -116,11 +115,13 @@ def get_jigsaw_pieces_exhaustive(size, dims=8):
     # Get the rotations
     rotations = load_transform_matrix(transform_dir, only_rotations=True)
     print(len(rotations))
-    pieces = np.array([])
+    # Empty array to hold everything
+    pieces = np.zeros((num_files, size, size))
     for i in range(num_files):
         file_name = f"{dims_folder}-{i}{'-256' if size == 256 else ''}.png"
         original_file = original_dir / file_name
-        transform_file = permutation_dir / file_name
-        pieces = np.append(pieces, load_pieces(original_file, transform_file))
-
+        #transform_file = permutation_dir / file_name
+        new_pieces = load_pieces(original_file)
+        # Append new pieces
+        pieces[i] = new_pieces
     return pieces
