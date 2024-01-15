@@ -196,9 +196,6 @@ def make_jigsaw_perm_8(size, seed=0):
                 print("Error on: ", x, y, nx, ny, new_idx, size)
                 exit()
             print(f"({x},{y}) -> ({nx},{ny}), {new_idx}") 
-            # Write to file
-            # with open('tmp.txt', 'a') as f:
-            #     f.write(f"{x},{y},{nx},{ny}\n")
 
     # sanity check
     #import matplotlib.pyplot as plt
