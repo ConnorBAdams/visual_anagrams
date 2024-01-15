@@ -16,9 +16,9 @@ def get_inv_perm(perm):
         A 1-dimensional integer array, representing a permutation. Indicates
         that element i should move to index perm[i]
     '''
-    print(perm.shape, perm)
     perm_inv = torch.empty_like(perm)
     perm_inv[perm] = torch.arange(len(perm))
+    print(perm.shape, perm, perm_inv.shape, perm_inv)
     return perm_inv
 
 
