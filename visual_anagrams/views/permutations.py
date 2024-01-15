@@ -16,9 +16,14 @@ def get_inv_perm(perm):
         A 1-dimensional integer array, representing a permutation. Indicates
         that element i should move to index perm[i]
     '''
-    perm_inv = torch.empty_like(perm)
-    perm_inv[perm] = torch.arange(len(perm))
+    #perm_inv = torch.empty_like(perm)
+    #perm_inv[perm] = torch.arange(len(perm))
+    perm_inv = torch.argsort(perm)
     print(perm.shape, perm, perm_inv.shape, perm_inv)
+    print(perm.dtype)
+    print(perm.dim())
+    print(perm.min())
+    print(perm.max())
     return perm_inv
 
 
@@ -149,7 +154,10 @@ def make_jigsaw_perm_8(size, seed=0):
         for x in range(size):
             # Get the piece index
             # This is raster scan order so we have to swap x and y
+            #piece_idx = (y // ps) * ps + x // ps
             piece_idx = np.argmax(pieces[:, y, x], axis=0)
+
+            # TODO: Some pixels can be static, we should validate the argmax is 1
 
             # Look up the rotation index of the piece
             rot_deg = transform_matrix[piece_idx][3]
@@ -177,14 +185,14 @@ def make_jigsaw_perm_8(size, seed=0):
             intermediate_x = nx // ps
             intermediate_y = ny // ps
 
-            # Get the destination X and Y
+            # Get the destination X and Y (in pieces)
             dest_x = transform_matrix[piece_idx][0]
             dest_y = transform_matrix[piece_idx][1]
 
+            translate_x = dest_x * ps
+            translate_y = dest_y * ps
             translate_x = dest_x - intermediate_x
             translate_y = dest_y - intermediate_y
-            translate_x = translate_x * ps
-            translate_y = translate_y * ps
 
             # Now translate the piece to the correct location
             nx = nx + translate_x
@@ -193,7 +201,7 @@ def make_jigsaw_perm_8(size, seed=0):
             # append new index to permutation array
             new_idx = int(ny * size + nx)
             perm.append(new_idx)
-            #print(f"({x},{y}) -> ({nx},{ny})", f"   - {len(perm)} => {new_idx}")
+            print(f"({x},{y}) -> ({nx},{ny})", f"   - {len(perm)} => {new_idx}")
             if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size * size:
                 print("Error on: ", x, y, nx, ny, new_idx, size)
                 exit()
