@@ -42,6 +42,8 @@ class PermuteView(BaseView):
 
         # Check how many times 0 occurs in perm_64
         print(f"perm_64 0 count: {torch.sum(self.perm_64 == 0)}")
+        # print each index where 0 occurs
+        print(f"perm_64 0 indices: {torch.nonzero(self.perm_64 == 0)}")
 
         #print(self.perm_256_inv, self.perm_256_inv.dim(), self.perm_256_inv.dtype, torch.max(self.perm_256_inv), torch.min(self.perm_256_inv))
         assert torch.max(self.perm_64) == torch.max(self.perm_64_inv)
