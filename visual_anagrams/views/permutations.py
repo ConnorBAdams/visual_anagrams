@@ -149,9 +149,11 @@ def make_jigsaw_perm_8(size, seed=0):
             # Get the piece index
             # This is raster scan order so we have to swap x and y
             piece_idx = np.argmax(pieces[:, y, x], axis=0)
+
             # Look up the rotation index of the piece
             rot_deg = transform_matrix[piece_idx][3]
 
+            #print(f"Piece {piece_idx} is at ({x},{y}) and should rotate ({rot_deg})")
             # Figure out where it should go
             angle = rot_deg / 180 * np.pi
 
@@ -188,8 +190,12 @@ def make_jigsaw_perm_8(size, seed=0):
             ny = ny + translate_y
 
             # append new index to permutation array
-            new_idx = int(ny * size + nx)
+            new_idx = int(ny + nx)
             perm.append(new_idx)
+            if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size * size:
+                print("Error on: ", x, y, nx, ny, new_idx, size)
+                exit()
+            print(f"({x},{y}) -> ({nx},{ny}), {new_idx}") 
             # Write to file
             # with open('tmp.txt', 'a') as f:
             #     f.write(f"{x},{y},{nx},{ny}\n")
@@ -218,7 +224,6 @@ def make_jigsaw_perm_8(size, seed=0):
     #im = Image.open('results/flip.campfire.man/0000/sample_256.png')
     #im = np.array(im)
     #Image.fromarray(im.reshape(-1, 3)[perm].reshape(size,size,3)).save('test.png')
-
     return torch.tensor(perm)
 
 #for i in range(100):
