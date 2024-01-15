@@ -66,11 +66,10 @@ def load_data(path):
     data = data.split(',')
 
     # Parse each dictionary
-    matrix = np.empty((len(data), 4), dtype=int)
+    matrix = np.empty((len(data) // 4, 4), dtype=int)
     for i in range(0, len(data), 4):
-        print(','.join(data[i:i+4]))
         x, y, n, r = map(int, re.findall(r'\d+', ','.join(data[i:i+4])))
-        matrix[i] = [x, y, n, r]
+        matrix[i // 4] = [x, y, n, r]
 
     return matrix
 
