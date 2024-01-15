@@ -152,7 +152,7 @@ def make_jigsaw_perm_8(size, seed=0):
 
             # Look up the rotation index of the piece
             rot_idx = transform_matrix[piece_idx]
-            dest_rot_idx = int(rot_idx) // 90
+            dest_rot_idx = int(current_index) // 90
 
             # Figure out where it should go
             angle = (dest_rot_idx - rot_idx) * 90 / 180 * np.pi
