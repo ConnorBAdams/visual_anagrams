@@ -26,8 +26,8 @@ class JigsawView_8(PermuteView):
         super().__init__(self.perm_64, self.perm_256)
 
         # Override the self.perm_64_inv and self.perm_256_inv with tensors that have incrementing counts
-        self.perm_64_inv = torch.arange(64)
-        self.perm_256_inv = torch.arange(256)
+        self.perm_64_inv = torch.arange(64*64)
+        self.perm_256_inv = torch.arange(256*256)
 
     def extract_pieces(self, im):
         '''
