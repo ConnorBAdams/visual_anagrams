@@ -211,12 +211,10 @@ def make_jigsaw_perm_8(size, seed=0):
 
             if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size*size:
                 print("Error on: ", x, y, nx, ny, new_idx, size)
-                exit()
 
             # For testing, we know 0,0 will always be 0 so it something else is 0 then halt
             if x !=0 and y!=0 and new_idx == 0:
                 print("Error on: ", x, y, nx, ny, new_idx, size)
-                exit()
 
             # For testing, if we're on piece 7, 1 exit
             # if y == size - 1 and x == 0:
