@@ -16,6 +16,7 @@ def get_inv_perm(perm):
         A 1-dimensional integer array, representing a permutation. Indicates
         that element i should move to index perm[i]
     '''
+    print(perm.shape, perm)
     perm_inv = torch.empty_like(perm)
     perm_inv[perm] = torch.arange(len(perm))
     return perm_inv
@@ -190,8 +191,9 @@ def make_jigsaw_perm_8(size, seed=0):
             ny = ny + translate_y
 
             # append new index to permutation array
-            new_idx = int(ny + nx)
+            new_idx = int(ny * size + nx)
             perm.append(new_idx)
+            #print(f"({x},{y}) -> ({nx},{ny})", f"   - {len(perm)} => {new_idx}")
             if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size * size:
                 print("Error on: ", x, y, nx, ny, new_idx, size)
                 exit()
