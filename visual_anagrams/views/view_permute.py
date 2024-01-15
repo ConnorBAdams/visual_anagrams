@@ -47,7 +47,7 @@ class PermuteView(BaseView):
 
         #print(self.perm_256_inv, self.perm_256_inv.dim(), self.perm_256_inv.dtype, torch.max(self.perm_256_inv), torch.min(self.perm_256_inv))
         assert torch.max(self.perm_64) == torch.max(self.perm_64_inv)
-        exit()
+
 
     def view(self, im):
         im_size = im.shape[-1]
