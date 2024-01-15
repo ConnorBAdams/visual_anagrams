@@ -4,7 +4,7 @@ import torch
 import torchvision.transforms.functional as TF
 from einops import rearrange, repeat
 
-from .jigsaw_helpers import get_jigsaw_pieces
+from .jigsaw_helpers import get_jigsaw_pieces, get_jigsaw_pieces_exhaustive, load_transform_matrix
 
 def get_inv_perm(perm):
     '''
@@ -83,6 +83,126 @@ def make_square_hinge(im_size=64):
                     torch.rot90(idxs[x0:x1,y0:y1], k=k)
     return idxs.flatten()
 
+def make_jigsaw_perm_8(size, seed=0):
+    '''
+    Returns a permutation of pixels that is a jigsaw permutation
+
+    There are 3 types of pieces: corner, edge, and inner pieces. 
+    Eache piece has multiple permutations and each piece has a starting position
+    in the first puzzle and a destination position in the second puzzle.
+
+    The permutation is defined by an output from the generator, an example would be:
+
+    [x=0,y=0,n=0,r=0], [x=0,y=3,n=1,r=0], [x=0,y=5,n=2,r=0], [x=4,y=7,n=3,r=270], ...
+    ...
+
+    In this example each cell contains [destination X, destination Y, unique piece ID, rotation in degreees]
+
+    Permutations are defined by:
+        1. The folder containing the pieces has two subfolders, "original" and "transform"
+        2. The original folder contains all pieces in order and in their starting position
+        3. The transform folder contains the original pieces in order but in their destination position (and rotation)
+        4. To map between them the file paths can be used, for example: original/8x8-0-256.png -> transform/8x8-0-256.png
+
+    Also note, order of indexes in permutation array is raster scan order. So,
+        go along x's first, then y's. This means y * size + x gives us the 
+        1-D location in the permutation array. And image arrays are in 
+        (y,x) order.
+
+    Plan of attack for making a pixel permutation array that represents
+        a jigsaw permutation:
+
+        1. Iterate through all pixels (in raster scan order)
+        2. Figure out which puzzle piece it is in initially
+        3. Look at the permutations, and see where it should go
+        4. Additionally, see if it's an edge piece, and needs to be swapped
+        5. Add the new (1-D) index to the permutation array
+
+    '''
+    #np.random.seed(seed)
+
+    # Get location of puzzle pieces
+    piece_dir = Path(__file__).parent / 'assets'
+
+    # Get random permutations of groups of 4, and cat
+    #identity = np.arange(4)
+    #perm_corner = np.random.permutation(identity)
+    #perm_inner = np.random.permutation(identity)
+    #perm_edge1 = np.random.permutation(identity)
+    #perm_edge2 = np.random.permutation(identity)
+    #edge_swaps = np.random.randint(2, size=4)
+    #piece_perms = np.concatenate([perm_corner, perm_inner, perm_edge1, perm_edge2])
+
+    # Get all the pieces in order of the names
+    pieces = get_jigsaw_pieces_exhaustive(size, 8)
+
+    # Make permutation array to fill
+    perm = []
+
+    transform_dir = piece_dir / "8x8" / f"8x8-transform.txt"
+    transform_matrix = load_transform_matrix(transform_dir, only_rotations=True)
+
+    # For each pixel, figure out where it should go
+    for y in range(size):
+        for x in range(size):
+            # Figure out which piece (x,y) is in:
+            piece_idx = pieces[:,y,x].argmax()
+
+            # Look up the rotation index of the piece
+            rot_idx = transform_matrix[piece_idx]
+            dest_rot_idx = int(rot_idx) // 90
+
+            # Figure out where it should go
+            angle = (dest_rot_idx - rot_idx) * 90 / 180 * np.pi
+
+            # Center coordinates on origin
+            cx = x - (size - 1) / 2.
+            cy = y - (size - 1) / 2.
+
+            # Perform rotation
+            nx = np.cos(angle) * cx - np.sin(angle) * cy
+            ny = np.sin(angle) * cx + np.cos(angle) * cy
+
+            # Translate back and round coordinates to _nearest_ integer
+            nx = nx + (size - 1) / 2.
+            ny = ny + (size - 1) / 2.
+            nx = int(np.rint(nx))
+            ny = int(np.rint(ny))
+
+            # append new index to permutation array
+            new_idx = int(ny * size + nx)
+            perm.append(new_idx)
+
+    # sanity check
+    #import matplotlib.pyplot as plt
+    #missing = sorted(set(range(size*size)).difference(set(perm)))
+    #asdf = np.zeros(size*size)
+    #asdf[missing] = 1
+    #plt.imshow(asdf.reshape(size,size))
+    #plt.savefig('tmp.png')
+    #plt.show()
+    #print(np.sum(asdf))
+
+    #viz = np.zeros((64,64))
+    #for idx in perm:
+    #    y, x = idx // 64, idx % 64
+    #    viz[y,x] = 1
+    #plt.imshow(viz)
+    #plt.savefig('tmp.png')
+    #Image.fromarray(viz * 255).convert('RGB').save('tmp.png')
+    #Image.fromarray(pieces_edge1[0] * 255).convert('RGB').save('tmp.png')
+
+    # sanity check on test image
+    #im = Image.open('results/flip.campfire.man/0000/sample_64.png')
+    #im = Image.open('results/flip.campfire.man/0000/sample_256.png')
+    #im = np.array(im)
+    #Image.fromarray(im.reshape(-1, 3)[perm].reshape(size,size,3)).save('test.png')
+
+    return torch.tensor(perm)
+
+#for i in range(100):
+    #make_jigsaw_perm(64, seed=i)
+#make_jigsaw_perm(256, seed=11)
 
 
 def make_jigsaw_perm(size, seed=0):

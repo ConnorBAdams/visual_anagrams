@@ -3,23 +3,24 @@ from PIL import Image
 import torch
 from einops import einsum, rearrange
 
-from .permutations import make_jigsaw_perm, get_inv_perm
+from .permutations import make_jigsaw_perm_8, get_inv_perm
 from .view_permute import PermuteView
 from .jigsaw_helpers import get_jigsaw_pieces
 
-class JigsawView(PermuteView):
+class JigsawView_6(PermuteView):
     '''
-    Implements a 4x4 jigsaw puzzle view...
+    Implements a 6x6 jigsaw puzzle view...
+    This is a modified version of the existing JigsawView 4x4 class
     '''
     def __init__(self, seed=11):
         '''
         '''
         # Get pixel permutations, corresponding to jigsaw permutations
-        self.perm_64, _ = make_jigsaw_perm(64, seed=seed)
-        self.perm_256, (jigsaw_perm) = make_jigsaw_perm(256, seed=seed)
+        self.perm_64 = make_jigsaw_perm_8(64, seed=seed)
+        self.perm_256 = make_jigsaw_perm_8(256, seed=seed)
 
         # keep track of jigsaw permutation as well
-        self.piece_perms, self.edge_swaps = jigsaw_perm
+        #self.piece_perms, self.edge_swaps = jigsaw_perm
 
         # Init parent PermuteView, with above pixel perms
         super().__init__(self.perm_64, self.perm_256)
