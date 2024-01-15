@@ -1,6 +1,7 @@
 from pathlib import Path
 from PIL import Image
 import numpy as np
+import re
 
 def get_jigsaw_pieces(size):
     '''
@@ -54,6 +55,24 @@ def load_pieces(original_path, transform_path, rotation=0):
     pieces = np.stack([piece, transform_piece])
     return pieces
 
+def load_data(path):
+    with open(path, 'r') as f:
+        data = f.read()
+
+    # Remove brackets and spaces
+    data = data.replace('[', '').replace(']', '').replace(' ', '')
+
+    # Split the data into individual dictionaries
+    data = data.split(',')
+
+    # Parse each dictionary
+    matrix = np.empty((len(data), 4), dtype=int)
+    for i, d in enumerate(data):
+        x, y, n, r = map(int, re.findall(r'\d+', d))
+        matrix[i] = [x, y, n, r]
+
+    return matrix
+
 # Helper function to load the transform matrix
 def load_transform_matrix(path, only_rotations=True):
     '''
@@ -64,7 +83,7 @@ def load_transform_matrix(path, only_rotations=True):
     Each cell represents the starting position of a piece, the x and y are the destination,
     the n represents the unique piece ID (which is currently not used), and r is the rotation in degrees 
     '''
-    matrix = np.loadtxt(path, delimiter=',', dtype=str)
+    matrix = load_data(path)
     if not only_rotations:
         return matrix
     
