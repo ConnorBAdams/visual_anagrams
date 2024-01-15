@@ -16,9 +16,8 @@ def get_inv_perm(perm):
         A 1-dimensional integer array, representing a permutation. Indicates
         that element i should move to index perm[i]
     '''
-    #perm_inv = torch.empty_like(perm)
-    #perm_inv[perm] = torch.arange(len(perm))
-    perm_inv = torch.argsort(perm)
+    perm_inv = torch.empty_like(perm)
+    perm_inv[perm] = torch.arange(len(perm))
     print(perm.shape, perm, perm_inv.shape, perm_inv)
     print(perm.dtype)
     print(perm.dim())
@@ -156,6 +155,7 @@ def make_jigsaw_perm_8(size, seed=0):
             # This is raster scan order so we have to swap x and y
             #piece_idx = (y // ps) * ps + x // ps
             piece_idx = np.argmax(pieces[:, y, x], axis=0)
+            print(f"Piece {piece_idx} is at ({x},{y}) - ({x//ps},{y//ps})")
 
             # TODO: Some pixels can be static, we should validate the argmax is 1
 
@@ -166,8 +166,8 @@ def make_jigsaw_perm_8(size, seed=0):
             angle = rot_deg / 180 * np.pi
 
             # Center coordinates on origin
-            cx = x - (size - 1) / 2.
-            cy = y - (size - 1) / 2.
+            cx = y - (size - 1) / 2.
+            cy = x - (size - 1) / 2.
 
             # Perform rotation
             nx = np.cos(angle) * cx - np.sin(angle) * cy
@@ -196,12 +196,13 @@ def make_jigsaw_perm_8(size, seed=0):
             ny = ny + translate_y
 
             # append new index to permutation array
-            new_idx = int(nx * size + ny)
+            new_idx = int(ny * size + nx)
             perm.append(new_idx)
+            print(f"({x},{y}) -> ({nx},{ny})", f"   - {len(perm)} => {new_idx}")
             if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size * size:
                 print("Error on: ", x, y, nx, ny, new_idx, size)
-                exit()
             #print(f"({x},{y}) -> ({nx},{ny}), {new_idx}") 
+
     # sanity check
     #import matplotlib.pyplot as plt
     #missing = sorted(set(range(size*size)).difference(set(perm)))
