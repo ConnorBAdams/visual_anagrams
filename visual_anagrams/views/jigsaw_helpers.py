@@ -69,7 +69,7 @@ def load_transform_matrix(path, only_rotations=True):
         return matrix
     
     # Only return the rotations in a 2D array
-    return matrix[:,3].reshape(8,8)
+    return matrix[:,3]
 
 def get_jigsaw_pieces_exhaustive(size, dims=8):
     '''
