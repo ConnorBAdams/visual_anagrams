@@ -146,7 +146,9 @@ def make_jigsaw_perm_8(size, seed=0):
     for y in range(size):
         for x in range(size):
             # Figure out which piece (x,y) is in:
-            piece_idx = pieces[:,y,x].argmax()
+            # Get the index:
+            current_index = y * size + x
+            piece_idx = pieces[current_index].argmax()
 
             # Look up the rotation index of the piece
             rot_idx = transform_matrix[piece_idx]
