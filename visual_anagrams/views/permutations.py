@@ -18,11 +18,6 @@ def get_inv_perm(perm):
     '''
     perm_inv = torch.empty_like(perm)
     perm_inv[perm] = torch.arange(len(perm))
-    print(perm.shape, perm, perm_inv.shape, perm_inv)
-    print(perm.dtype)
-    print(perm.dim())
-    print(perm.min())
-    print(perm.max())
     return perm_inv
 
 
@@ -148,6 +143,7 @@ def make_jigsaw_perm_8(size, seed=0):
     # 5. Then we will translate to the correct location
 
     ps = np.sqrt(size).astype(int)
+    print(size, ps)
 
     for y in range(size):
         for x in range(size):
@@ -155,9 +151,13 @@ def make_jigsaw_perm_8(size, seed=0):
             # This is raster scan order so we have to swap x and y
             #piece_idx = (y // ps) * ps + x // ps
             piece_idx = np.argmax(pieces[:, y, x], axis=0)
-            print(f"Piece {piece_idx} is at ({x},{y}) - ({x//ps},{y//ps})")
 
-            # TODO: Some pixels can be static, we should validate the argmax is 1
+            # Some pixels can be static, we should validate the argmax is 1
+            # Otherwise they remain the same position
+            if pieces[piece_idx, y, x] != 1:
+                pos = y * size + x
+                perm.append((y // ps) * ps + x // ps)
+                continue
 
             # Look up the rotation index of the piece
             rot_deg = transform_matrix[piece_idx][3]
@@ -165,27 +165,32 @@ def make_jigsaw_perm_8(size, seed=0):
             # Figure out where it should go
             angle = rot_deg / 180 * np.pi
 
-            # Center coordinates on origin
-            cx = y - (size - 1) / 2.
-            cy = x - (size - 1) / 2.
+            if angle > 0:
+                # NOTE: The x and y were swapped
+                # Center coordinates on origin
+                cx = y - (size - 1) / 2.
+                cy = x - (size - 1) / 2.
 
-            # Perform rotation
-            nx = np.cos(angle) * cx - np.sin(angle) * cy
-            ny = np.sin(angle) * cx + np.cos(angle) * cy
-            # Translate back and round coordinates to _nearest_ integer
-            nx = nx + (size - 1) / 2.
-            ny = ny + (size - 1) / 2.
-            nx = int(np.rint(nx))
-            ny = int(np.rint(ny))
+                # Perform rotation
+                nx = np.cos(angle) * cx - np.sin(angle) * cy
+                ny = np.sin(angle) * cx + np.cos(angle) * cy
+                # Translate back and round coordinates to _nearest_ integer
+                nx = nx + (size - 1) / 2.
+                ny = ny + (size - 1) / 2.
+                nx = int(np.rint(nx))
+                ny = int(np.rint(ny))
+            else:
+                nx = x
+                ny = y
 
             # Calculate the piece equivalent of the destination to figure out how many piece it needs to be translated
             # to be in the destination position
             intermediate_x = nx // ps
             intermediate_y = ny // ps
             # Get the destination X and Y (in pieces)
-            dest_x = transform_matrix[piece_idx][0]
-            dest_y = transform_matrix[piece_idx][1]
-
+            # Note: These are swapped
+            dest_x = transform_matrix[piece_idx][1]
+            dest_y = transform_matrix[piece_idx][0]
             translate_x = dest_x - intermediate_x
             translate_y = dest_y - intermediate_y
             translate_x = translate_x * ps
@@ -198,9 +203,14 @@ def make_jigsaw_perm_8(size, seed=0):
             # append new index to permutation array
             new_idx = int(ny * size + nx)
             perm.append(new_idx)
-            print(f"({x},{y}) -> ({nx},{ny})", f"   - {len(perm)} => {new_idx}")
-            if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size * size:
+            print(f"({x},{y}) -> ({nx},{ny})", f" - {len(perm)} => {new_idx}")
+            if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size*size:
                 print("Error on: ", x, y, nx, ny, new_idx, size)
+            
+            # For testing, if we're on piece 7, 1 exit
+            # if y == size - 1 and x == 0:
+            #     print("Exiting for check")
+            #     exit()
             #print(f"({x},{y}) -> ({nx},{ny}), {new_idx}") 
 
     # sanity check
@@ -227,6 +237,7 @@ def make_jigsaw_perm_8(size, seed=0):
     #im = Image.open('results/flip.campfire.man/0000/sample_256.png')
     #im = np.array(im)
     #Image.fromarray(im.reshape(-1, 3)[perm].reshape(size,size,3)).save('test.png')
+                
     return torch.tensor(perm)
 
 #for i in range(100):
