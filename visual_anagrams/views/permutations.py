@@ -161,7 +161,6 @@ def make_jigsaw_perm_8(size, seed=0):
 
             # Look up the rotation index of the piece
             rot_deg = transform_matrix[piece_idx][3]
-
             #print(f"Piece {piece_idx} is at ({x},{y}) and should rotate ({rot_deg})")
             # Figure out where it should go
             angle = rot_deg / 180 * np.pi
@@ -173,7 +172,6 @@ def make_jigsaw_perm_8(size, seed=0):
             # Perform rotation
             nx = np.cos(angle) * cx - np.sin(angle) * cy
             ny = np.sin(angle) * cx + np.cos(angle) * cy
-
             # Translate back and round coordinates to _nearest_ integer
             nx = nx + (size - 1) / 2.
             ny = ny + (size - 1) / 2.
@@ -184,29 +182,26 @@ def make_jigsaw_perm_8(size, seed=0):
             # to be in the destination position
             intermediate_x = nx // ps
             intermediate_y = ny // ps
-
             # Get the destination X and Y (in pieces)
             dest_x = transform_matrix[piece_idx][0]
             dest_y = transform_matrix[piece_idx][1]
 
-            translate_x = dest_x * ps
-            translate_y = dest_y * ps
             translate_x = dest_x - intermediate_x
             translate_y = dest_y - intermediate_y
+            translate_x = translate_x * ps
+            translate_y = translate_y * ps
 
             # Now translate the piece to the correct location
             nx = nx + translate_x
             ny = ny + translate_y
 
             # append new index to permutation array
-            new_idx = int(ny * size + nx)
+            new_idx = int(nx * size + ny)
             perm.append(new_idx)
-            print(f"({x},{y}) -> ({nx},{ny})", f"   - {len(perm)} => {new_idx}")
             if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size * size:
                 print("Error on: ", x, y, nx, ny, new_idx, size)
                 exit()
             #print(f"({x},{y}) -> ({nx},{ny}), {new_idx}") 
-
     # sanity check
     #import matplotlib.pyplot as plt
     #missing = sorted(set(range(size*size)).difference(set(perm)))
