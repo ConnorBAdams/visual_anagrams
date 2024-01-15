@@ -7,7 +7,7 @@ from .permutations import make_jigsaw_perm_8, get_inv_perm
 from .view_permute import PermuteView
 from .jigsaw_helpers import get_jigsaw_pieces
 
-class JigsawView_6(PermuteView):
+class JigsawView_8(PermuteView):
     '''
     Implements a 6x6 jigsaw puzzle view...
     This is a modified version of the existing JigsawView 4x4 class
