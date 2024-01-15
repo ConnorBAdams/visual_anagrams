@@ -19,6 +19,10 @@ args = parser.parse_args()
 save_dir = Path(args.save_dir) / args.name
 save_dir.mkdir(exist_ok=True, parents=True)
 
+
+# Get views
+views = get_views(args.views)
+
 # Make models
 stage_1 = DiffusionPipeline.from_pretrained(
                 "DeepFloyd/IF-I-M-v1.0",
@@ -41,8 +45,6 @@ prompt_embeds, negative_prompt_embeds = zip(*prompt_embeds)
 prompt_embeds = torch.cat(prompt_embeds)
 negative_prompt_embeds = torch.cat(negative_prompt_embeds)  # These are just null embeds
 
-# Get views
-views = get_views(args.views)
 
 # Save metadata
 save_metadata(views, args, save_dir)

@@ -35,7 +35,7 @@ def get_jigsaw_pieces(size):
     return pieces
 
 # Helper function to load pieces as np arrays
-def load_pieces(original_path, transform_path, rotation=0):
+def load_pieces(original_path, transform_path):
     '''
     Load a piece, from the given path, as a binary numpy array.
     Return a list of the "base" piece, and the specified rotation
@@ -88,7 +88,7 @@ def load_transform_matrix(path, only_rotations=True):
         return matrix
     
     # Only return the rotations in a 2D array
-    return matrix[:,3].reshape(8,8)
+    return matrix[:,3]
 
 def get_jigsaw_pieces_exhaustive(size, dims=8):
     '''
@@ -105,21 +105,22 @@ def get_jigsaw_pieces_exhaustive(size, dims=8):
     # Location of pieces
     piece_dir = Path(__file__).parent / 'assets'
     transform_dir = piece_dir / dims_folder / f"{dims_folder}-transform.txt"
-    piece_dir = piece_dir / dims_folder / str(size)
-    original_dir = piece_dir / 'original'
-    permutation_dir = piece_dir / 'transform'
+    piece_dir = piece_dir / dims_folder 
+    original_dir = piece_dir / 'original' / str(size)
+    permutation_dir = piece_dir / 'transform' / str(size)
 
     # Get the total number of files in the folder
     num_files = len(list(original_dir.glob('*.png')))
+    print(f"Loading {num_files} files from {original_dir}")
 
     # Get the rotations
     rotations = load_transform_matrix(transform_dir, only_rotations=True)
-    
+    print(len(rotations))
     pieces = np.array([])
     for i in range(num_files):
         file_name = f"{dims_folder}-{i}{'-256' if size == 256 else ''}.png"
         original_file = original_dir / file_name
         transform_file = permutation_dir / file_name
-        pieces = np.append(pieces, load_pieces(original_file, transform_file, rotations[i]))
+        pieces = np.append(pieces, load_pieces(original_file, transform_file))
 
     return pieces
