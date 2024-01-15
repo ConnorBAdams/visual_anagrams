@@ -9,7 +9,7 @@ from .jigsaw_helpers import get_jigsaw_pieces
 
 class JigsawView_8(PermuteView):
     '''
-    Implements a 6x6 jigsaw puzzle view...
+    Implements a 8x8 jigsaw puzzle view...
     This is a modified version of the existing JigsawView 4x4 class
     '''
     def __init__(self, seed=11):
@@ -24,6 +24,10 @@ class JigsawView_8(PermuteView):
 
         # Init parent PermuteView, with above pixel perms
         super().__init__(self.perm_64, self.perm_256)
+
+        # Override the self.perm_64_inv and self.perm_256_inv with tensors that have incrementing counts
+        self.perm_64_inv = torch.arange(64)
+        self.perm_256_inv = torch.arange(256)
 
     def extract_pieces(self, im):
         '''

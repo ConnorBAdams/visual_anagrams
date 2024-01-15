@@ -195,7 +195,7 @@ def make_jigsaw_perm_8(size, seed=0):
             if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size * size:
                 print("Error on: ", x, y, nx, ny, new_idx, size)
                 exit()
-            print(f"({x},{y}) -> ({nx},{ny}), {new_idx}") 
+            #print(f"({x},{y}) -> ({nx},{ny}), {new_idx}") 
 
     # sanity check
     #import matplotlib.pyplot as plt
