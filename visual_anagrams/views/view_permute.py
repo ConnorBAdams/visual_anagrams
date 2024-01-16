@@ -33,20 +33,22 @@ class PermuteView(BaseView):
         self.perm_256_inv = get_inv_perm(self.perm_256)
 
         print("The max of perm_64 is: " + str(torch.max(self.perm_64)))
-        #print("The max of perm_256 is: " + str(torch.max(self.perm_256)))
+        print("The max of perm_256 is: " + str(torch.max(self.perm_256)))
 
         print("The max of perm_64_inv is: " + str(torch.max(self.perm_64_inv)))
-        #print("The max of perm_256_inv is: " + str(torch.max(self.perm_256_inv)))
+        print("The max of perm_256_inv is: " + str(torch.max(self.perm_256_inv)))
         print(f"perm_64 {self.perm_64}")
         print(f"perm_64_inv {self.perm_64_inv}")
-
         # Check how many times 0 occurs in perm_64
         print(f"perm_64 0 count: {torch.sum(self.perm_64 == 0)}")
+        print(f"perm_64 err count: {torch.sum(self.perm_64_inv > 4096)}")
         # print each index where 0 occurs
         print(f"perm_64 0 indices: {torch.nonzero(self.perm_64 == 0)}")
+        print(f"perm_64 0 indices: {torch.nonzero(self.perm_64_inv > 4096)}")
 
         #print(self.perm_256_inv, self.perm_256_inv.dim(), self.perm_256_inv.dtype, torch.max(self.perm_256_inv), torch.min(self.perm_256_inv))
         assert torch.max(self.perm_64) == torch.max(self.perm_64_inv)
+        assert torch.max(self.perm_256) == torch.max(self.perm_256_inv)
 
 
     def view(self, im):

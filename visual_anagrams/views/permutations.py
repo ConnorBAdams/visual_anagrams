@@ -84,42 +84,36 @@ def make_square_hinge(im_size=64):
                     torch.rot90(idxs[x0:x1,y0:y1], k=k)
     return idxs.flatten()
 
+def rotate_piece(piece_x, piece_y, rot_deg):
+    # Calculate the center of the board in terms of pieces
+    center = 3.5  # For an 8x8 board
+
+    # Adjust the coordinates relative to the center, in terms of pieces
+    piece_x -= center
+    piece_y -= center
+
+    # Initialize intermediate coordinates
+    intermediate_x = piece_x
+    intermediate_y = piece_y
+
+    # Perform the rotation
+    if rot_deg == 90:
+        intermediate_x = piece_y
+        intermediate_y = -piece_x
+    elif rot_deg == 180:
+        intermediate_x = -piece_x
+        intermediate_y = -piece_y
+    elif rot_deg == 270:
+        intermediate_x = -piece_y
+        intermediate_y = piece_x
+
+    # Adjust the coordinates back to the range [0, 7]
+    intermediate_x += center
+    intermediate_y += center
+
+    return round(intermediate_x), round(intermediate_y)
+
 def make_jigsaw_perm_8(size, seed=0):
-    '''
-    Returns a permutation of pixels that is a jigsaw permutation
-
-    There are 3 types of pieces: corner, edge, and inner pieces. 
-    Eache piece has multiple permutations and each piece has a starting position
-    in the first puzzle and a destination position in the second puzzle.
-
-    The permutation is defined by an output from the generator, an example would be:
-
-    [x=0,y=0,n=0,r=0], [x=0,y=3,n=1,r=0], [x=0,y=5,n=2,r=0], [x=4,y=7,n=3,r=270], ...
-    ...
-
-    In this example each cell contains [destination X, destination Y, unique piece ID, rotation in degreees]
-
-    Permutations are defined by:
-        1. The folder containing the pieces has two subfolders, "original" and "transform"
-        2. The original folder contains all pieces in order and in their starting position
-        3. The transform folder contains the original pieces in order but in their destination position (and rotation)
-        4. To map between them the file paths can be used, for example: original/8x8-0-256.png -> transform/8x8-0-256.png
-
-    Also note, order of indexes in permutation array is raster scan order. So,
-        go along x's first, then y's. This means y * size + x gives us the 
-        1-D location in the permutation array. And image arrays are in 
-        (y,x) order.
-
-    Plan of attack for making a pixel permutation array that represents
-        a jigsaw permutation:
-
-        1. Iterate through all pixels (in raster scan order)
-        2. Figure out which puzzle piece it is in initially
-        3. Look at the permutations, and see where it should go
-        4. Additionally, see if it's an edge piece, and needs to be swapped
-        5. Add the new (1-D) index to the permutation array
-
-    '''
 
     # Get location of puzzle pieces
     piece_dir = Path(__file__).parent / 'assets'
@@ -141,8 +135,9 @@ def make_jigsaw_perm_8(size, seed=0):
     # 3. The `transform_matrix` provide a lookup for where the piece should go
     # 4. We will first rotate about the center of the canvas
     # 5. Then we will translate to the correct location
-
-    ps = np.sqrt(size).astype(int)
+    
+    # TODO: If we want to make this greater than 8x8 then this should have a different denominator
+    ps = int(size/8)
     print(size, ps)
 
     for y in range(size):
@@ -151,71 +146,98 @@ def make_jigsaw_perm_8(size, seed=0):
             # This is raster scan order so we have to swap x and y
             #piece_idx = (y // ps) * ps + x // ps
             piece_idx = np.argmax(pieces[:, y, x], axis=0)
+            #print(f"Piece {piece_idx} is at ({x},{y}) - ({x//ps},{y//ps})")
 
-
-            # Some pixels can be static, we should validate the argmax is 1
-            # Otherwise they remain the same position
+            # We don't want any static pixels, those lead to errors
             if pieces[piece_idx, y, x] != 1:
                 pos = y * size + x
-                perm.append(pos)
-                continue
+                print(f"Piece at position{x},{y} is static, pos {pos}. Exiting.")
+                exit()
+
+            # Get the piece coordinates from the ID
+            piece_x = piece_idx % 8
+            piece_y = piece_idx // 8
+            #print(f"Starting: {piece_x}, {piece_y}")
 
             # Look up the rotation index of the piece
             rot_deg = transform_matrix[piece_idx][3]
-
+            #print("Rotating by", rot_deg)
             #print(f"Piece {piece_idx} is at ({x},{y}) and should rotate ({rot_deg})")
             # Figure out where it should go
             angle = rot_deg / 180 * np.pi
 
             if angle > 0:
-                # NOTE: The x and y were swapped
                 # Center coordinates on origin
-                cx = y - (size - 1) / 2.
-                cy = x - (size - 1) / 2.
+                cx = x - (size - 1) / 2.0
+                cy = y - (size - 1) / 2.0
 
                 # Perform rotation
-                nx = np.cos(angle) * cx - np.sin(angle) * cy
-                ny = np.sin(angle) * cx + np.cos(angle) * cy
-
+                nx = np.cos(-angle) * cx - np.sin(-angle) * cy
+                ny = np.sin(-angle) * cx + np.cos(-angle) * cy
+                #print(f"Rotated: ({nx // ps},{ny // ps})")
                 # Translate back and round coordinates to _nearest_ integer
-                nx = nx + (size - 1) / 2.
-                ny = ny + (size - 1) / 2.
+                nx = nx + (size - 1) / 2.0
+                ny = ny + (size - 1) / 2.0
                 nx = int(np.rint(nx))
                 ny = int(np.rint(ny))
             else:
                 nx = x
                 ny = y
 
+            # Error in the following logic: 
+            # This assums that the puzzle is split into equal parts, which is wrong.
+            # Instead we need to use the rotation to calculate the equivalent piece position
+            # For example: a 180 degree turn from [0, 0] is [ps, ps], [0, ps] is [ps, 0]
+            # a 90 degree turn of [1, 1] is [ps-1, 1], [1, ps-1] is [1, 1]
+
             # Calculate the piece equivalent of the destination to figure out how many piece it needs to be translated
             # to be in the destination position
-            intermediate_x = nx // ps
-            intermediate_y = ny // ps
+            intermediate_x, intermediate_y = rotate_piece(piece_x, piece_y, rot_deg)
+
+            #print(f"Intermediate: ({intermediate_x},{intermediate_y}) - {nx}, {ny}")
+
+            # After we have the position of the piece, we need to figure out where it should go
+            # Based off the transform matrix
+            # With this we can take the difference and translate the piece to the correct location
 
             # Get the destination X and Y (in pieces)
             # Note: These are swapped
             dest_x = transform_matrix[piece_idx][1]
             dest_y = transform_matrix[piece_idx][0]
-
+            #print(f"Destination: ({dest_x},{dest_y})")
             translate_x = dest_x - intermediate_x
             translate_y = dest_y - intermediate_y
+
+            # Convert pieces to pixels
             translate_x = translate_x * ps
             translate_y = translate_y * ps
 
             # Now translate the piece to the correct location
+            #print(f"Translate: ({translate_x},{translate_y}) px\n{nx} -> {nx + translate_x}, {ny} -> {ny + translate_y}")
+            
             nx = nx + translate_x
             ny = ny + translate_y
 
             # append new index to permutation array
+            # Given position nx and ny we need to know the 1D pixel index
             new_idx = int(ny * size + nx)
-            perm.append(new_idx)
-
             if nx < 0 or ny < 0 or nx >= size or ny >= size or new_idx >= size*size:
-                print("Error on: ", x, y, nx, ny, new_idx, size)
+                print("Error OOB on: ", x, y, nx, ny, new_idx, size)
+                exit()
 
             # For testing, we know 0,0 will always be 0 so it something else is 0 then halt
             if x !=0 and y!=0 and new_idx == 0:
-                print("Error on: ", x, y, nx, ny, new_idx, size)
+                print("Error 0 on: ", x, y, nx, ny, new_idx, size)
+                exit()
+            
+            # Each value should be unique
+            if new_idx in perm:
+                print("Error dupe on: ", x, y, nx, ny, new_idx, size)
+                print("Value already in perm: ", perm.index(new_idx), perm[perm.index(new_idx)])
+                exit()
 
+            perm.append(new_idx)
+            #print(f"({x},{y}) -> ({nx},{ny})", f" - [{len(perm) - 1}] => {new_idx}")
             # For testing, if we're on piece 7, 1 exit
             # if y == size - 1 and x == 0:
             #     print("Exiting for check")
