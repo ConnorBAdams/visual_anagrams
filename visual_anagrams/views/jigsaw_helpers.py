@@ -106,7 +106,6 @@ def get_jigsaw_pieces_exhaustive(size, dims=8):
     transform_dir = piece_dir / dims_folder / f"{dims_folder}-transform.txt"
     piece_dir = piece_dir / dims_folder 
     original_dir = piece_dir / 'original' / str(size)
-    permutation_dir = piece_dir / 'transform' / str(size)
 
     # Get the total number of files in the folder
     num_files = len(list(original_dir.glob('*.png')))
@@ -120,7 +119,6 @@ def get_jigsaw_pieces_exhaustive(size, dims=8):
     for i in range(num_files):
         file_name = f"{dims_folder}-{i}{'-256' if size == 256 else ''}.png"
         original_file = original_dir / file_name
-        #transform_file = permutation_dir / file_name
         new_pieces = load_pieces(original_file)
         # Append new pieces
         pieces[i] = new_pieces

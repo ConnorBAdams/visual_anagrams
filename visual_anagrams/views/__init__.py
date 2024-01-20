@@ -2,7 +2,8 @@ from pathlib import Path
 from PIL import Image
 import numpy as np
 
-from .view_jigsaw_new import JigsawView_8
+from .view_jigsaw_8 import JigsawView_8
+from .view_jigsaw_32 import JigsawView_32
 
 from .view_identity import IdentityView
 from .view_flip import FlipView
@@ -24,6 +25,7 @@ VIEW_MAP = {
     'patch_permute': PatchPermuteView,
     'pixel_permute': PatchPermuteView,
     'jigsaw': JigsawView_8,
+    'jigsaw_32': JigsawView_32,
     'inner_circle': InnerCircleView,
     'square_hinge': SquareHingeView,
 }
