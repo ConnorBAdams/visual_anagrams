@@ -302,7 +302,7 @@ def rotate_piece_32x32(piece_x, piece_y, rot_deg):
     # Adjust the coordinates back to the range [0, 32]
     intermediate_x += center
     intermediate_y += center
-    print(f"Intermediate after piece rotation: ({intermediate_x},{intermediate_y})")
+    # print(f"Intermediate after piece rotation: ({intermediate_x},{intermediate_y})")
     return intermediate_x, intermediate_y
 
 def make_jigsaw_perm_32(size, seed=0):
@@ -311,7 +311,7 @@ def make_jigsaw_perm_32(size, seed=0):
     piece_dir = Path(__file__).parent / 'assets'
 
     ps = int(size/32)
-    print(size, ps)
+    #print(size, ps)
 
     # Get all the pieces in order of the names
     pieces = get_jigsaw_pieces_exhaustive(size, 32)
